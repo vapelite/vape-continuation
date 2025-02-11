@@ -1494,6 +1494,7 @@ run(function()
     local KnockbackReductionHorizontal
     local KnockbackReductionVertical
     local TargetCheck
+    local TargetCheckRange -- New slider for target check range
     local Delay
     local rand, old = Random.new()
 
@@ -1504,7 +1505,7 @@ run(function()
                 old = bedwars.KnockbackUtil.applyKnockback
                 bedwars.KnockbackUtil.applyKnockback = function(root, mass, dir, knockback, ...)
                     local check = (not TargetCheck.Enabled) or entitylib.EntityPosition({
-                        Range = 50,
+                        Range = TargetCheckRange.Value, -- Uses the new slider value
                         Part = 'RootPart',
                         Players = true
                     })
@@ -1514,27 +1515,16 @@ run(function()
                         if Horizontal.Value == 0 and Vertical.Value == 0 then return end
                         
                         -- Apply base knockback reduction
-                        local newHorizontal = (knockback.horizontal or 1) * (Horizontal.Value / 100)
-                        local newVertical = (knockback.vertical or 1) * (Vertical.Value / 100)
+                        knockback.horizontal = (knockback.horizontal or 1) * (Horizontal.Value / 100)
+                        knockback.vertical = (knockback.vertical or 1) * (Vertical.Value / 100)
 
                         -- Chance-based knockback reduction
                         if rand:NextNumber(0, 100) <= ChanceHorizontal.Value then
-                            newHorizontal = newHorizontal * (KnockbackReductionHorizontal.Value / 100)
+                            knockback.horizontal = knockback.horizontal * (KnockbackReductionHorizontal.Value / 100)
                         end
                         if rand:NextNumber(0, 100) <= ChanceVertical.Value then
-                            newVertical = newVertical * (KnockbackReductionVertical.Value / 100)
+                            knockback.vertical = knockback.vertical * (KnockbackReductionVertical.Value / 100)
                         end
-
-                        -- Apply Final Knockback Chance logic
-                        if rand:NextNumber(0, 100) <= ChanceHorizontal.Value then
-                            newHorizontal = knockback.horizontal * (ChanceHorizontal.Value / 100)
-                        end
-                        if rand:NextNumber(0, 100) <= ChanceVertical.Value then
-                            newVertical = knockback.vertical * (ChanceVertical.Value / 100)
-                        end
-
-                        knockback.horizontal = newHorizontal
-                        knockback.vertical = newVertical
 
                         -- Apply precise delay
                         if Delay.Value > 0 then
@@ -1600,6 +1590,15 @@ run(function()
     })
 
     TargetCheck = Velocity:CreateToggle({Name = 'Only when targeting'})
+
+    -- New Target Check Range Slider
+    TargetCheckRange = Velocity:CreateSlider({
+        Name = 'Target Check Range',
+        Min = 0,
+        Max = 100,
+        Default = 50, -- Default range of 50
+        Suffix = ' blocks'
+    })
 
     -- Precise Delay Slider (up to 1000ms with small increments)
     Delay = Velocity:CreateSlider({
@@ -5034,7 +5033,7 @@ run(function()
 						if wool then
 							local root = entitylib.character.RootPart
 							if Tower.Enabled and inputService:IsKeyDown(Enum.KeyCode.Space) and (not inputService:GetFocusedTextBox()) then
-								root.Velocity = Vector3.new(root.Velocity.X, 37, root.Velocity.Z)
+								root.Velocity = Vector3.new(root.Velocity.X, 36, root.Velocity.Z)
 							end
 	
 							for i = Expand.Value, 1, -1 do
