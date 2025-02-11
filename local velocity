@@ -1485,115 +1485,121 @@ run(function()
 	})
 end)
 	
-local Velocity
-local Horizontal
-local Vertical
-local HorizontalChance
-local VerticalChance
-local KnockbackReduction
-local TargetCheck
-local Delay
-local rand, old = Random.new()
+run(function()
+    local Velocity
+    local Horizontal
+    local Vertical
+    local ChanceHorizontal
+    local ChanceVertical
+    local KnockbackReductionHorizontal
+    local KnockbackReductionVertical
+    local TargetCheck
+    local Delay
+    local rand, old = Random.new()
 
-Velocity = vape.Categories.Combat:CreateModule({
-    Name = 'Velocity',
-    Function = function(callback)
-        if callback then
-            old = bedwars.KnockbackUtil.applyKnockback
-            bedwars.KnockbackUtil.applyKnockback = function(root, mass, dir, knockback, ...)
-                local check = (not TargetCheck.Enabled) or entitylib.EntityPosition({
-                    Range = 50,
-                    Part = 'RootPart',
-                    Players = true
-                })
+    Velocity = vape.Categories.Combat:CreateModule({
+        Name = 'Velocity',
+        Function = function(callback)
+            if callback then
+                old = bedwars.KnockbackUtil.applyKnockback
+                bedwars.KnockbackUtil.applyKnockback = function(root, mass, dir, knockback, ...)
+                    local check = (not TargetCheck.Enabled) or entitylib.EntityPosition({
+                        Range = 50,
+                        Part = 'RootPart',
+                        Players = true
+                    })
 
-                if check then
-                    knockback = knockback or {}
-                    if Horizontal.Value == 0 and Vertical.Value == 0 then return end
-                    
-                    -- Apply base knockback reduction
-                    if rand:NextNumber(0, 100) <= HorizontalChance.Value then
+                    if check then
+                        knockback = knockback or {}
+                        if Horizontal.Value == 0 and Vertical.Value == 0 then return end
+                        
+                        -- Apply base knockback reduction
                         knockback.horizontal = (knockback.horizontal or 1) * (Horizontal.Value / 100)
-                    end
-                    if rand:NextNumber(0, 100) <= VerticalChance.Value then
                         knockback.vertical = (knockback.vertical or 1) * (Vertical.Value / 100)
+
+                        -- Chance-based knockback reduction
+                        if rand:NextNumber(0, 100) <= ChanceHorizontal.Value then
+                            knockback.horizontal = knockback.horizontal * (KnockbackReductionHorizontal.Value / 100)
+                        end
+                        if rand:NextNumber(0, 100) <= ChanceVertical.Value then
+                            knockback.vertical = knockback.vertical * (KnockbackReductionVertical.Value / 100)
+                        end
+
+                        -- Apply precise delay
+                        if Delay.Value > 0 then
+                            task.wait(Delay.Value / 1000)
+                        end
                     end
-                    
-                    -- Chance-based knockback reduction
-                    if rand:NextNumber(0, 100) <= KnockbackReduction.Value then
-                        local reductionFactor = KnockbackReduction.Value / 100
-                        knockback.horizontal = knockback.horizontal * reductionFactor
-                        knockback.vertical = knockback.vertical * reductionFactor
-                    end
-                    
-                    -- Apply delay before sending knockback (converted from ms to seconds)
-                    if Delay.Value > 0 then
-                        task.wait(Delay.Value / 1000)
-                    end
+
+                    return old(root, mass, dir, knockback, ...)
                 end
-
-                return old(root, mass, dir, knockback, ...)
+            else
+                bedwars.KnockbackUtil.applyKnockback = old
             end
-        else
-            bedwars.KnockbackUtil.applyKnockback = old
-        end
-    end,
-    Tooltip = 'Reduces knockback taken'
-})
+        end,
+        Tooltip = 'Reduces knockback taken'
+    })
 
-Horizontal = Velocity:CreateSlider({
-    Name = 'Horizontal',
-    Min = 0,
-    Max = 100,
-    Default = 0,
-    Suffix = '%'
-})
+    Horizontal = Velocity:CreateSlider({
+        Name = 'Horizontal',
+        Min = 0,
+        Max = 100,
+        Default = 0,
+        Suffix = '%'
+    })
+    
+    Vertical = Velocity:CreateSlider({
+        Name = 'Vertical',
+        Min = 0,
+        Max = 100,
+        Default = 0,
+        Suffix = '%'
+    })
 
-Vertical = Velocity:CreateSlider({
-    Name = 'Vertical',
-    Min = 0,
-    Max = 100,
-    Default = 0,
-    Suffix = '%'
-})
+    ChanceHorizontal = Velocity:CreateSlider({
+        Name = 'Chance Horizontal',
+        Min = 0,
+        Max = 100,
+        Default = 100,
+        Suffix = '%'
+    })
 
-HorizontalChance = Velocity:CreateSlider({
-    Name = 'Horizontal Chance',
-    Min = 0,
-    Max = 100,
-    Default = 100,
-    Suffix = '%'
-})
+    ChanceVertical = Velocity:CreateSlider({
+        Name = 'Chance Vertical',
+        Min = 0,
+        Max = 100,
+        Default = 100,
+        Suffix = '%'
+    })
+    
+    KnockbackReductionHorizontal = Velocity:CreateSlider({
+        Name = 'Knockback Reduction Horizontal',
+        Min = 0,
+        Max = 100,
+        Default = 50, -- Default: Reduce knockback by 50% when triggered
+        Suffix = '%'
+    })
 
-VerticalChance = Velocity:CreateSlider({
-    Name = 'Vertical Chance',
-    Min = 0,
-    Max = 100,
-    Default = 100,
-    Suffix = '%'
-})
+    KnockbackReductionVertical = Velocity:CreateSlider({
+        Name = 'Knockback Reduction Vertical',
+        Min = 0,
+        Max = 100,
+        Default = 50, -- Default: Reduce knockback by 50% when triggered
+        Suffix = '%'
+    })
 
-KnockbackReduction = Velocity:CreateSlider({
-    Name = 'Knockback Reduction',
-    Min = 0,
-    Max = 100,
-    Default = 50, -- Default: Reduce knockback by 50% when triggered
-    Suffix = '%'
-})
+    TargetCheck = Velocity:CreateToggle({Name = 'Only when targeting'})
 
-TargetCheck = Velocity:CreateToggle({Name = 'Only when targeting'})
-
--- New Delay Slider (0ms - 1000ms)
-Delay = Velocity:CreateSlider({
-    Name = 'Delay',
-    Min = 0,
-    Max = 1000,
-    Default = 0,
-    Increment = 50, -- Allows 50ms steps (0, 50, 100, ..., 1000)
-    Suffix = 'ms'
-})
-
-
+    -- Precise Delay Slider (up to 1000ms with small increments)
+    Delay = Velocity:CreateSlider({
+        Name = 'Delay',
+        Min = 0,
+        Max = 1000,
+        Default = 0,
+        Increment = 0.01, -- High precision delay
+        Suffix = 'ms'
+    })
+end)
 
 	
 local AntiFallDirection
@@ -5016,7 +5022,7 @@ run(function()
 						if wool then
 							local root = entitylib.character.RootPart
 							if Tower.Enabled and inputService:IsKeyDown(Enum.KeyCode.Space) and (not inputService:GetFocusedTextBox()) then
-								root.Velocity = Vector3.new(root.Velocity.X, 35, root.Velocity.Z)
+								root.Velocity = Vector3.new(root.Velocity.X, 37, root.Velocity.Z)
 							end
 	
 							for i = Expand.Value, 1, -1 do
@@ -8425,4 +8431,4 @@ run(function()
 		List = WinEffectName
 	})
 end)
- 
+	
