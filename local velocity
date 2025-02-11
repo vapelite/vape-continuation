@@ -1514,16 +1514,27 @@ run(function()
                         if Horizontal.Value == 0 and Vertical.Value == 0 then return end
                         
                         -- Apply base knockback reduction
-                        knockback.horizontal = (knockback.horizontal or 1) * (Horizontal.Value / 100)
-                        knockback.vertical = (knockback.vertical or 1) * (Vertical.Value / 100)
+                        local newHorizontal = (knockback.horizontal or 1) * (Horizontal.Value / 100)
+                        local newVertical = (knockback.vertical or 1) * (Vertical.Value / 100)
 
                         -- Chance-based knockback reduction
                         if rand:NextNumber(0, 100) <= ChanceHorizontal.Value then
-                            knockback.horizontal = knockback.horizontal * (KnockbackReductionHorizontal.Value / 100)
+                            newHorizontal = newHorizontal * (KnockbackReductionHorizontal.Value / 100)
                         end
                         if rand:NextNumber(0, 100) <= ChanceVertical.Value then
-                            knockback.vertical = knockback.vertical * (KnockbackReductionVertical.Value / 100)
+                            newVertical = newVertical * (KnockbackReductionVertical.Value / 100)
                         end
+
+                        -- Apply Final Knockback Chance logic
+                        if rand:NextNumber(0, 100) <= ChanceHorizontal.Value then
+                            newHorizontal = knockback.horizontal * (ChanceHorizontal.Value / 100)
+                        end
+                        if rand:NextNumber(0, 100) <= ChanceVertical.Value then
+                            newVertical = knockback.vertical * (ChanceVertical.Value / 100)
+                        end
+
+                        knockback.horizontal = newHorizontal
+                        knockback.vertical = newVertical
 
                         -- Apply precise delay
                         if Delay.Value > 0 then
@@ -1600,6 +1611,7 @@ run(function()
         Suffix = 'ms'
     })
 end)
+
 
 	
 local AntiFallDirection
